@@ -1,24 +1,14 @@
--- Tarea 10: Promedios con NULL y reporte
+WITH sample(x) AS (VALUES (NULL::numeric),(10000::numeric),(0::numeric),(0::numeric))
+SELECT ROUND(AVG(x),2) AS ignores_null,
+       ROUND(AVG(COALESCE(x,0)),2) AS treats_null_as_zero
+FROM sample;
 
-WITH sample_data AS (
-SELECT val FROM (VALUES (1000.0),(0.0),(0.0),(NULL))
-AS t (val)
-)
-SELECT
-AVG (val) AS AVG_ignoring_null,
-Count (val) AS Count_ignoring_null,
-AVG (COALESCE (val, 0)) AS avg_with_coalesce,
-Count (COALESCE (val, 0)) AS count_with_coalesce
-FROM sample_data;
-
-SELECT
-a.account_id,
-a.balance,
-COUNT (t.transaction_id) AS volumen_bruto_registrado
-FROM accounts a
-LEFT JOIN transactions t ON a.account_id = t.account_id
-WHERE a.account_type = 'CREDIT'
-AND a.is_active = TRUE
-GROUP BY a.account_id, a.balance
-Having COUNT (t.transaction_id) = 0
-OR COALESCE (SUM (t.amount), 0) >= 300;
+SELECT c.email,a.account_number,a.balance AS stored_balance,
+       COUNT(t.transaction_id) AS movement_count,
+       COALESCE(SUM(t.amount),0) AS recorded_gross_volume
+FROM core.customers c JOIN core.accounts a USING (customer_id)
+LEFT JOIN core.transactions t USING (account_id)
+WHERE a.account_type='CREDIT' AND a.is_active
+GROUP BY c.customer_id,c.email,a.account_id,a.account_number,a.balance
+HAVING COALESCE(SUM(t.amount),0)>=300 OR COUNT(t.transaction_id)=0
+ORDER BY recorded_gross_volume DESC;
