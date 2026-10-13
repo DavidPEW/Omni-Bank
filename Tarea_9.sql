@@ -1,24 +1,12 @@
--- TAREA 9
+SELECT (SELECT COUNT(*) FROM core.customers) AS customers,
+       (SELECT COUNT(*) FROM core.accounts) AS accounts,
+       (SELECT COUNT(*) FROM core.transactions) AS transactions;
+SELECT COUNT(*) AS combinations
+FROM core.customers CROSS JOIN core.accounts CROSS JOIN core.transactions;
 
-SELECT 
-  (SELECT COUNT(*) FROM customers) AS total_customers,
-  (SELECT COUNT(*) FROM accounts) AS total_accounts,
-  (SELECT COUNT(*) FROM transactions) AS total_transactions,
-  ((SELECT COUNT(*) FROM customers) * (SELECT COUNT(*) FROM accounts) * (SELECT COUNT(*) FROM transactions)) AS cartesian_product_total;
-
-SELECT
-  c.email AS customer_email,
-  a.account_number,
-  t.transaction_type,
-  t.amount,
-  t.transaction_date
-FROM transactions t
-INNER JOIN accounts a
-  ON t.account_id = a.account_id
-INNER JOIN customers c
-  ON a.customer_id = c.customer_id
-WHERE c.status = 'ACTIVE'
-  AND t.amount >= 100.00
-ORDER BY t.transaction_date ASC, t.transaction_id ASC;
-
--- La diferencia entre las 80 combinaciones del producto cartesiano y los 3 eventos finales se debe a dos efectos independientes: primero, aplicar las dos condiciones de clave faltantes reduce drásticamente el resultado de 80 a 4 filas al descartar asociaciones falsas; segundo, los filtros del WHERE descartan un registro más, acotando el reporte final a 3 eventos reales.
+SELECT c.email,a.account_number,t.tx_type,t.amount,t.tx_timestamp
+FROM core.transactions t
+JOIN core.accounts a ON a.account_id=t.account_id
+JOIN core.customers c ON c.customer_id=a.customer_id
+WHERE c.is_active AND t.amount>=100
+ORDER BY t.tx_timestamp,t.transaction_id;
