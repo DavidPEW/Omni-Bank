@@ -1,41 +1,20 @@
--- Actividad 12
+SELECT t_ext.transaction_id,t_ext.account_id,t_ext.amount,
+       (SELECT ROUND(AVG(t_int.amount),2)
+        FROM core.transactions t_int
+        WHERE t_int.account_id=t_ext.account_id) AS account_average
+FROM core.transactions t_ext
+WHERE t_ext.amount>(
+  SELECT AVG(t_int.amount)
+  FROM core.transactions t_int
+  WHERE t_int.account_id=t_ext.account_id
+)
+ORDER BY t_ext.amount DESC;
+SELECT account_id,ROUND(AVG(amount),2) AS account_average
+FROM core.transactions GROUP BY account_id ORDER BY account_id;
 
--- 1.-
-
-SELECT
-  t.transaction_id,
-  t.account_id,
-  t.amount,
-  (SELECT AVG(x.amount) FROM transactions x WHERE x.account_id = t.account_id) AS account_avg
-FROM transactions t
-WHERE t.amount > (
-  SELECT AVG(x.amount)
-  FROM transactions x
-  WHERE x.account_id = t.account_id)
-ORDER BY t.account_id, t.amount DESC;
-
-
--- 2.-
-
-SELECT
-  t.transaction_id,
-  t.account_id,
-  t.amount,
-  a_avg.avg_amount
-FROM transactions t
-JOIN (SELECT account_id, AVG(amount) AS avg_amount
-FROM transactions
-GROUP BY account_id
-) a_avg ON t.account_id = a_avg.account_id
-WHERE t.amount > a_avg.avg_amount
-ORDER BY t.account_id, t.amount DESC;
-
-
--- 3.-
-
-SELECT
-  acc.account_number,
-  acc.is_active
-FROM accounts acc
-WHERE NOT EXISTS ( SELECT 1 FROM transactions x WHERE x.account_id = acc.account_id)
-ORDER BY acc.account_number;
+SELECT a.account_number,a.is_active,a.balance
+FROM core.accounts a
+WHERE NOT EXISTS (
+  SELECT 1 FROM core.transactions t WHERE t.account_id=a.account_id
+)
+ORDER BY a.account_number;
