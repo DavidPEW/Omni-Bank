@@ -1,8 +1,12 @@
-INSERT INTO core.customers (customer_id, first_name, last_name, email, phone_number, tax_id, date_of_birth)
-VALUES ('11111111-1111-1111-1111-111111111111', 'John', 'Doe', 'john.doe@email.com', '555-0100', 'TAX-100', '1985-04-12')
-ON CONFLICT (email) DO NOTHING;
-
-ON Conflict (account_number) Do Nothing;
-
-UPDATE core.accounts
-Where 'ACCT-1001' RETURNING account_number, balance;
+-- Guion Oficial para Sincronización KYC en OmniBank:
+INSERT INTO core.customers (first_name, last_name, email, phone_number, tax_id)
+VALUES 
+    ('Humberto', 'López', 'hlopez@email.com', '+52-55-4433-2211', 'TAX-990011')
+ON CONFLICT (email) 
+DO UPDATE SET 
+    first_name   = EXCLUDED.first_name,
+    last_name    = EXCLUDED.last_name,
+    phone_number = EXCLUDED.phone_number,
+    -- (Es vital dejar intacta y no tocar deliberadamente nuestra fecha de alta created_at ni su UUID)
+    is_active    = true
+RETURNING customer_id, email, is_active;
