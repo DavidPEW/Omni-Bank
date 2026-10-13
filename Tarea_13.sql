@@ -1,59 +1,18 @@
--- TAREA 13
-
-WITH movimientos_por_cuenta AS (SELECT
-t.account_id, COUNT(t.transaction_id) AS
-total_eventos,
-SUM(t.amount) AS volumen_bruto
-FROM core.transactions t
-WHERE t.amount > 0
-Group BY t.account_id),
-cuentas_activas AS (SELECT
-  a.account_id,
-  a.customer_id,
-  a.account_number,
-  a.account_type,
-  a.currency,
-  COALESCE(m.total_eventos, 0) AS recuento_eventos,
-  COALESCE(m.volumen_bruto, 0.00) AS volumen_bruto
-FROM core.accounts a
-LEFT JOIN movimientos_por_cuenta m ON
-m.account_id = a.account_id
-WHERE a.is_active = true),
-resumen_por_moneda AS (SELECT
-  ca.currency,
-  COUNT(ca.account_id) AS total_eventos
-  _activas,
-  SUM(ca.volumen_bruto) AS volumen_bruto_total,
-  ROUND(AVG(ca.volumen_bruto), 2) AS promedio
-  _por_cuenta
-FROM cuentas_activas ca
-Group BY ca.currency)
-
-SELECT
-  currency,
-  total_cuentas_activas,
-  volumen_bruto_total,
-  promedio_por_cuenta
-FROM resumen_por_moneda
-ORDER BY currency ASC;
-
-SELECT COUNT (*) AS total_eventos
--activas
-FROM core.accounts
-WHERE is_active = true;
-
-SELECT
-  SUM(Monto_cuenta) AS volumen_total_semilla,
-  COUNT(*) AS denominador_cuentas,
-  SUM(Monto_cuenta) / COUNT(*) AS
-  promedio_calculado
-FROM (
-  SELECT
-    a.account_number,
-    COALESCE(SUM(t.amount), 0) AS monto_cuenta
-  FROM core.accounts a
-  LEFT JOIN core.transactions t ON
-  t.account_id = a.account_id AND t.amount > 0
-  WHERE a.is_active = true
-  Group BY a.account_number
-) sub;
+WITH movement AS (
+ SELECT account_id, SUM(amount) AS gross_volume
+ FROM core.transactions GROUP BY account_id
+), account_metrics AS (
+ SELECT a.account_id, a.currency, COALESCE(m.gross_volume,0) AS gross_volume
+ FROM core.accounts a LEFT JOIN movement m USING (account_id)
+ WHERE a.is_active
+), by_currency AS (
+ SELECT currency, COUNT(*) AS account_count, SUM(gross_volume) AS gross_volume
+ FROM account_metrics GROUP BY currency
+)
+SELECT currency, account_count, gross_volume,
+       ROUND(gross_volume / account_count,2) AS average_per_account
+FROM by_currency ORDER BY currency;
+SELECT (SELECT COUNT(*) FROM core.accounts WHERE is_active) AS active_accounts,
+       (SELECT COALESCE(SUM(amount),0) FROM core.transactions) AS direct_gross_volume,
+       (SELECT COUNT(*) FROM core.transactions t JOIN core.accounts a USING (account_id)
+        WHERE a.account_number='ACCT-3002') AS empty_account_events;
