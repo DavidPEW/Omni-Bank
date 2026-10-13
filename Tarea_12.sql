@@ -1,33 +1,19 @@
--- Tarea 12
+SELECT a.account_number,a.account_type,a.balance
+FROM core.accounts a
+WHERE a.is_active
+  AND NOT EXISTS (
+    SELECT 1 FROM core.transactions t WHERE t.account_id=a.account_id
+  )
+ORDER BY a.account_number;
 
-SELECT
-  acc.account_number,
-  acc.is_active
-FROM accounts acc
-WHERE acc.is_active = 1
-AND NOT EXISTS (SELECT 1 FROM transactions x
-WHERE x.account_id = acc.account_id)
-ORDER BY acc.account_number;
-
-
--- 2.-
-
-SELECT
-  acc.account_number,
-  acc.is_active
-FROM accounts acc
-WHERE NOT EXISTS (SELECT 1 FROM transactions x WHERE x.account_id = acc.account_id
-AND x.transaction_type = 'DEPOSIT')
-ORDER BY acc.account_number;
-
-
--- 3.-
-
-WITH sample_data(val) AS (
-  SELECT 10 UNION ALL
-  SELECT 20 UNION ALL
-  SELECT NULL
+SELECT a.account_number,a.is_active
+FROM core.accounts a
+WHERE NOT EXISTS (
+  SELECT 1 FROM core.transactions t
+  WHERE t.account_id=a.account_id AND t.tx_type='DEPOSIT'
 )
-SELECT 'con NOT IN (falla)' AS test_case, val
-FROM sample_data
-WHERE val NOT IN (SELECT val FROM sample_data);
+ORDER BY a.account_number;
+
+WITH valores(x) AS (VALUES (1),(NULL::integer))
+SELECT 2 NOT IN (SELECT x FROM valores) AS not_in_with_null,
+       NOT EXISTS (SELECT 1 FROM valores WHERE x=2) AS not_exists_result;
